@@ -42,7 +42,7 @@ export default function CandidateForm({
   const [meetingNotesText, setMeetingNotesText] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [parseError, setParseError] = useState("");
-  const [showMeetingNotes, setShowMeetingNotes] = useState(false);
+  const [showMeetingNotes, setShowMeetingNotes] = useState(true);
   const [parseSuccess, setParseSuccess] = useState(false);
 
   const handleLinkedInImport = async () => {
