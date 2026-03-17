@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, Link, Loader2, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, Link, Loader2, FileText, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { addWeeks } from "@/lib/utils";
 import { parseLinkedInProfile, parseMeetingNotes } from "@/lib/actions";
 import type { Candidate, CandidateFormData, CandidateStatus, CandidateFunction, TouchChannel } from "@/lib/types";
@@ -45,6 +45,11 @@ export default function CandidateForm({
   const [showMeetingNotes, setShowMeetingNotes] = useState(true);
   const [parseSuccess, setParseSuccess] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [resumeError, setResumeError] = useState("");
+  const [resumeFileName, setResumeFileName] = useState("");
+
   const handleLinkedInImport = async () => {
     if (!linkedinImportUrl.trim()) return;
     setIsImporting(true);
@@ -69,6 +74,41 @@ export default function CandidateForm({
       setImportError("Failed to fetch profile. Please try again.");
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleResumeUpload = async (file: File) => {
+    setIsUploadingResume(true);
+    setResumeError("");
+    setResumeFileName(file.name);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/parse-resume", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResumeError(data.error || "Failed to parse resume.");
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        full_name: data.full_name || f.full_name,
+        current_company: data.current_company || f.current_company,
+        current_role: data.current_role || f.current_role,
+        email: data.email || f.email,
+        phone: data.phone || f.phone,
+        linkedin_url: data.linkedin_url || f.linkedin_url,
+        notes: data.notes || f.notes,
+      }));
+      setResumeFileName("");
+    } catch {
+      setResumeError("Failed to upload resume. Please try again.");
+    } finally {
+      setIsUploadingResume(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -141,52 +181,91 @@ export default function CandidateForm({
         </div>
 
         {!candidate && (
-          <div className="mx-6 mt-4 rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
-            <label className="mb-2 block text-xs font-medium text-zinc-400">
-              Import from LinkedIn
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Link
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-                />
-                <input
-                  type="url"
-                  value={linkedinImportUrl}
-                  onChange={(e) => {
-                    setLinkedinImportUrl(e.target.value);
-                    setImportError("");
-                  }}
-                  placeholder="https://linkedin.com/in/username"
-                  className="input-field pl-9 w-full"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleLinkedInImport();
-                    }
-                  }}
-                />
+          <div className="mx-6 mt-4 rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-4">
+            <div>
+              <label className="mb-2 block text-xs font-medium text-zinc-400">
+                Import from LinkedIn
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Link
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                  />
+                  <input
+                    type="url"
+                    value={linkedinImportUrl}
+                    onChange={(e) => {
+                      setLinkedinImportUrl(e.target.value);
+                      setImportError("");
+                    }}
+                    placeholder="https://linkedin.com/in/username"
+                    className="input-field pl-9 w-full"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleLinkedInImport();
+                      }
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLinkedInImport}
+                  disabled={isImporting || !linkedinImportUrl.trim()}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    "Import"
+                  )}
+                </button>
               </div>
+              {importError && (
+                <p className="mt-2 text-xs text-red-400">{importError}</p>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-700 pt-4">
+              <label className="mb-2 block text-xs font-medium text-zinc-400">
+                Or upload a Resume / CV
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.doc,.docx"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleResumeUpload(file);
+                }}
+              />
               <button
                 type="button"
-                onClick={handleLinkedInImport}
-                disabled={isImporting || !linkedinImportUrl.trim()}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingResume}
+                className="w-full rounded-lg border border-dashed border-zinc-600 px-4 py-3 text-sm text-zinc-400 hover:text-zinc-200 hover:border-zinc-500 transition-colors flex items-center justify-center gap-2"
               >
-                {isImporting ? (
+                {isUploadingResume ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    Importing...
+                    Parsing {resumeFileName}...
                   </>
                 ) : (
-                  "Import"
+                  <>
+                    <Upload size={14} />
+                    Upload PDF, DOCX, or TXT
+                  </>
                 )}
               </button>
+              {resumeError && (
+                <p className="mt-2 text-xs text-red-400">{resumeError}</p>
+              )}
             </div>
-            {importError && (
-              <p className="mt-2 text-xs text-red-400">{importError}</p>
-            )}
           </div>
         )}
 
