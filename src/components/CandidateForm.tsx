@@ -17,6 +17,7 @@ export default function CandidateForm({
   onClose: () => void;
   isSubmitting: boolean;
 }) {
+  const isAddMode = !candidate;
   const [form, setForm] = useState<CandidateFormData>({
     full_name: candidate?.full_name ?? "",
     current_company: candidate?.current_company ?? "",
@@ -192,9 +193,11 @@ export default function CandidateForm({
           </button>
         </div>
 
-        {!candidate && (
-          <div className="mx-6 mt-4 rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 space-y-4">
-            <div>
+        {/* Import sections — shown in Add mode */}
+        {isAddMode && (
+          <div className="mx-6 mt-4 space-y-4">
+            {/* LinkedIn Import */}
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
               <label className="mb-2 block text-xs font-medium text-zinc-400">
                 Import from LinkedIn
               </label>
@@ -242,9 +245,10 @@ export default function CandidateForm({
               )}
             </div>
 
-            <div className="border-t border-zinc-700 pt-4">
+            {/* Resume / CV Upload */}
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
               <label className="mb-2 block text-xs font-medium text-zinc-400">
-                Or upload a Resume / CV
+                Upload a Resume / CV
               </label>
               <input
                 ref={fileInputRef}
@@ -278,9 +282,75 @@ export default function CandidateForm({
                 <p className="mt-2 text-xs text-red-400">{resumeError}</p>
               )}
             </div>
+
+            {/* Meeting Notes */}
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-zinc-300 mb-3">
+                <FileText size={14} />
+                Paste Meeting Notes (AI extract)
+              </div>
+              <textarea
+                value={meetingNotesText}
+                onChange={(e) => {
+                  setMeetingNotesText(e.target.value);
+                  setParseError("");
+                  setParseSuccess(false);
+                }}
+                placeholder="Paste meeting notes from Granola, Otter, Fireflies, etc. AI will extract all candidate fields automatically..."
+                rows={5}
+                className="input-field resize-none w-full text-sm"
+              />
+              <div className="flex items-center justify-between mt-3">
+                <div>
+                  {parseError && (
+                    <p className="text-xs text-red-400">{parseError}</p>
+                  )}
+                  {parseSuccess && (
+                    <p className="text-xs text-green-400">
+                      Extracted fields from notes.
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleMeetingNotesParse}
+                  disabled={isParsing || !meetingNotesText.trim()}
+                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isParsing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    "Extract Fields"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Preview of parsed data */}
+            {(form.full_name || form.current_company || form.current_role) && (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-800/30 p-4">
+                <p className="text-xs font-medium text-zinc-500 mb-2">Parsed Preview</p>
+                <div className="space-y-1 text-sm text-zinc-300">
+                  {form.full_name && <p><span className="text-zinc-500">Name:</span> {form.full_name}</p>}
+                  {form.current_company && <p><span className="text-zinc-500">Company:</span> {form.current_company}</p>}
+                  {form.current_role && <p><span className="text-zinc-500">Role:</span> {form.current_role}</p>}
+                  {form.email && <p><span className="text-zinc-500">Email:</span> {form.email}</p>}
+                  {form.phone && <p><span className="text-zinc-500">Phone:</span> {form.phone}</p>}
+                  {form.linkedin_url && <p><span className="text-zinc-500">LinkedIn:</span> {form.linkedin_url}</p>}
+                  {form.warm_path && <p><span className="text-zinc-500">Warm Path:</span> {form.warm_path}</p>}
+                  {form.trigger_notes && <p><span className="text-zinc-500">Triggers:</span> {form.trigger_notes}</p>}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* Full edit form — shown in Edit mode only */}
+        {!isAddMode && (
+          <>
         {form.status === "ready" && (
           <div className="mx-6 mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
             <p className="text-sm font-medium text-green-400">
@@ -288,8 +358,12 @@ export default function CandidateForm({
             </p>
           </div>
         )}
+          </>
+        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {!isAddMode && (
+            <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Full Name *">
               <input
@@ -500,6 +574,8 @@ export default function CandidateForm({
               className="input-field resize-none"
             />
           </Field>
+            </>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <button

@@ -134,9 +134,9 @@ export default function Dashboard({
   const handleSubmit = async (data: CandidateFormData) => {
     setIsSubmitting(true);
     try {
-      await createCandidate(data);
+      const created = await createCandidate(data);
       setShowForm(false);
-      router.refresh();
+      router.push(`/candidates/${created.id}`);
     } catch (err) {
       console.error("Failed to create candidate:", err);
     } finally {
