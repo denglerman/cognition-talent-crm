@@ -93,8 +93,8 @@ export default function Dashboard({
       const q = search.toLowerCase();
       result = result.filter(
         (c) =>
-          c.full_name.toLowerCase().includes(q) ||
-          c.current_company.toLowerCase().includes(q)
+          (c.full_name ?? "").toLowerCase().includes(q) ||
+          (c.current_company ?? "").toLowerCase().includes(q)
       );
     }
     if (statusFilter) {
@@ -115,7 +115,7 @@ export default function Dashboard({
       if (sortBy === "status") {
         cmp = (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
       } else if (sortBy === "full_name") {
-        cmp = a.full_name.localeCompare(b.full_name);
+        cmp = (a.full_name ?? "").localeCompare(b.full_name ?? "");
       } else {
         const aVal = String(
           (a as unknown as Record<string, string>)[sortBy] || ""

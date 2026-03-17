@@ -7,10 +7,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create candidates table
 CREATE TABLE IF NOT EXISTS candidates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  full_name TEXT NOT NULL,
-  current_company TEXT NOT NULL,
-  "current_role" TEXT NOT NULL,
-  linkedin_url TEXT NOT NULL,
+  full_name TEXT,
+  current_company TEXT,
+  "current_role" TEXT,
+  linkedin_url TEXT,
   email TEXT,
   phone TEXT,
   status TEXT NOT NULL DEFAULT 'cold' CHECK (status IN ('cold', 'warm', 'ready')),

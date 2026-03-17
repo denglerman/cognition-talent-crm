@@ -268,9 +268,9 @@ Return ONLY valid JSON with all eleven string fields listed above.`,
 }
 
 export async function generateOutreachEmail(context: {
-  full_name: string;
-  current_company: string;
-  current_role: string;
+  full_name: string | null;
+  current_company: string | null;
+  current_role: string | null;
   status: string;
   trigger_notes: string | null;
   warm_path: string | null;

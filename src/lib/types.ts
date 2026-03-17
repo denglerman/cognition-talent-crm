@@ -4,10 +4,10 @@ export type TouchChannel = "linkedin" | "email" | "text" | "event" | "other";
 
 export interface Candidate {
   id: string;
-  full_name: string;
-  current_company: string;
-  current_role: string;
-  linkedin_url: string;
+  full_name: string | null;
+  current_company: string | null;
+  current_role: string | null;
+  linkedin_url: string | null;
   email: string | null;
   phone: string | null;
   status: CandidateStatus;

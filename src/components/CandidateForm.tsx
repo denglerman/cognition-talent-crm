@@ -182,6 +182,10 @@ export default function CandidateForm({
     };
     const data = {
       ...finalForm,
+      full_name: finalForm.full_name || null,
+      current_company: finalForm.current_company || null,
+      current_role: finalForm.current_role || null,
+      linkedin_url: finalForm.linkedin_url || null,
       email: finalForm.email || null,
       phone: finalForm.phone || null,
       trigger_notes: finalForm.trigger_notes || null,
@@ -339,7 +343,7 @@ export default function CandidateForm({
             <Field label="Full Name *">
               <input
                 required
-                value={form.full_name}
+                value={form.full_name ?? ""}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                 className="input-field"
               />
@@ -347,7 +351,7 @@ export default function CandidateForm({
             <Field label="Current Company *">
               <input
                 required
-                value={form.current_company}
+                value={form.current_company ?? ""}
                 onChange={(e) => setForm({ ...form, current_company: e.target.value })}
                 className="input-field"
               />
@@ -355,7 +359,7 @@ export default function CandidateForm({
             <Field label="Current Role *">
               <input
                 required
-                value={form.current_role}
+                value={form.current_role ?? ""}
                 onChange={(e) => setForm({ ...form, current_role: e.target.value })}
                 className="input-field"
               />
@@ -363,7 +367,7 @@ export default function CandidateForm({
             <Field label="LinkedIn URL *">
               <input
                 required
-                value={form.linkedin_url}
+                value={form.linkedin_url ?? ""}
                 onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
                 className="input-field"
               />
