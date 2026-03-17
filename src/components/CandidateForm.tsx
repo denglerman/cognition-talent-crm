@@ -125,9 +125,18 @@ export default function CandidateForm({
       if (result) {
         setForm((f) => ({
           ...f,
+          full_name: result.full_name || f.full_name,
+          current_company: result.current_company || f.current_company,
+          current_role: result.current_role || f.current_role,
+          email: result.email || f.email,
+          phone: result.phone || f.phone,
+          linkedin_url: result.linkedin_url || f.linkedin_url,
           warm_path: result.warm_path || f.warm_path,
           trigger_notes: result.trigger_notes || f.trigger_notes,
-          notes: result.notes || f.notes,
+          status: (["cold", "warm", "ready"].includes(result.status) ? result.status : f.status) as CandidateStatus,
+          last_touch_date: result.last_touch_date || f.last_touch_date,
+          last_touch_channel: (result.last_touch_channel || f.last_touch_channel) as TouchChannel | null,
+          notes: meetingNotesText,
         }));
         setParseSuccess(true);
         setMeetingNotesText("");
@@ -426,7 +435,7 @@ export default function CandidateForm({
                     )}
                     {parseSuccess && (
                       <p className="text-xs text-green-400">
-                        Extracted and filled Warm Path, Trigger Notes, and Notes
+                        Extracted fields from notes. Full notes copied to Notes field.
                       </p>
                     )}
                   </div>

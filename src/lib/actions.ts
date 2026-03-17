@@ -187,9 +187,17 @@ export async function parseMeetingNotes(
   notes: string,
   candidateName?: string
 ): Promise<{
+  full_name: string;
+  current_company: string;
+  current_role: string;
+  email: string;
+  phone: string;
+  linkedin_url: string;
   warm_path: string;
   trigger_notes: string;
-  notes: string;
+  status: string;
+  last_touch_date: string;
+  last_touch_channel: string;
 } | null> {
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -207,17 +215,24 @@ export async function parseMeetingNotes(
           role: "system",
           content: `You are an assistant for a technical recruiter at an AI company called Cognition. You extract structured information from meeting notes or AI notetaker transcripts.
 
-Given meeting notes, extract the following fields and return them as JSON:
+Given meeting notes, extract AS MANY of the following fields as possible and return them as JSON:
 
-1. "warm_path" - Who at Cognition (or the recruiter's network) has a connection to this candidate? Look for mentions of mutual contacts, referrals, who introduced them, shared history, etc. If none found, return empty string.
-
-2. "trigger_notes" - What would make this candidate move/switch jobs? Look for mentions of frustrations, desires, career goals, what they're looking for, deal-breakers, compensation expectations, timeline, etc. If none found, return empty string.
-
-3. "notes" - A clean, concise summary of the full meeting notes. Include key takeaways, candidate background, skills discussed, interests, and any action items. Keep it organized and recruiter-friendly.
+1. "full_name" - The candidate's full name.
+2. "current_company" - Their current company.
+3. "current_role" - Their current job title/role.
+4. "email" - Their email address if mentioned.
+5. "phone" - Their phone number if mentioned.
+6. "linkedin_url" - Their LinkedIn URL if mentioned.
+7. "warm_path" - Who at Cognition (or the recruiter's network) has a connection to this candidate? Mutual contacts, referrals, who introduced them, shared history, etc.
+8. "trigger_notes" - What would make this candidate move/switch jobs? Frustrations, desires, career goals, what they're looking for, deal-breakers, compensation expectations, timeline, etc.
+9. "status" - The candidate's interest level. Use "cold" if not interested or very early, "warm" if somewhat interested or open to conversations, "ready" if actively looking or ready to move. Only set if clearly indicated.
+10. "last_touch_date" - The date of this meeting/interaction in YYYY-MM-DD format. Look for dates mentioned in the notes.
+11. "last_touch_channel" - The channel of this interaction. Must be one of: "linkedin", "email", "text", "event", "other". Infer from context (e.g. video call = "other", LinkedIn message = "linkedin", etc.).
 
 ${nameContext}
 
-Return ONLY valid JSON with these three string fields: warm_path, trigger_notes, notes.`,
+For any field you cannot determine from the notes, return an empty string.
+Return ONLY valid JSON with all eleven string fields listed above.`,
         },
         {
           role: "user",
@@ -229,16 +244,20 @@ Return ONLY valid JSON with these three string fields: warm_path, trigger_notes,
     const content = response.choices[0]?.message?.content;
     if (!content) return null;
 
-    const parsed = JSON.parse(content) as {
-      warm_path?: string;
-      trigger_notes?: string;
-      notes?: string;
-    };
+    const parsed = JSON.parse(content) as Record<string, string | undefined>;
 
     return {
+      full_name: parsed.full_name ?? "",
+      current_company: parsed.current_company ?? "",
+      current_role: parsed.current_role ?? "",
+      email: parsed.email ?? "",
+      phone: parsed.phone ?? "",
+      linkedin_url: parsed.linkedin_url ?? "",
       warm_path: parsed.warm_path ?? "",
       trigger_notes: parsed.trigger_notes ?? "",
-      notes: parsed.notes ?? "",
+      status: parsed.status ?? "",
+      last_touch_date: parsed.last_touch_date ?? "",
+      last_touch_channel: parsed.last_touch_channel ?? "",
     };
   } catch {
     return null;
