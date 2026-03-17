@@ -2,6 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import OpenAI from "openai";
 import type { CandidateFormData } from "./types";
 
 function getSupabase() {
@@ -176,6 +177,68 @@ export async function parseLinkedInProfile(url: string): Promise<{
       current_company,
       current_role,
       linkedin_url: cleanUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function parseMeetingNotes(
+  notes: string,
+  candidateName?: string
+): Promise<{
+  warm_path: string;
+  trigger_notes: string;
+  notes: string;
+} | null> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const nameContext = candidateName
+      ? `The candidate's name is ${candidateName}.`
+      : "";
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an assistant for a technical recruiter at an AI company called Cognition. You extract structured information from meeting notes or AI notetaker transcripts.
+
+Given meeting notes, extract the following fields and return them as JSON:
+
+1. "warm_path" - Who at Cognition (or the recruiter's network) has a connection to this candidate? Look for mentions of mutual contacts, referrals, who introduced them, shared history, etc. If none found, return empty string.
+
+2. "trigger_notes" - What would make this candidate move/switch jobs? Look for mentions of frustrations, desires, career goals, what they're looking for, deal-breakers, compensation expectations, timeline, etc. If none found, return empty string.
+
+3. "notes" - A clean, concise summary of the full meeting notes. Include key takeaways, candidate background, skills discussed, interests, and any action items. Keep it organized and recruiter-friendly.
+
+${nameContext}
+
+Return ONLY valid JSON with these three string fields: warm_path, trigger_notes, notes.`,
+        },
+        {
+          role: "user",
+          content: notes,
+        },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) return null;
+
+    const parsed = JSON.parse(content) as {
+      warm_path?: string;
+      trigger_notes?: string;
+      notes?: string;
+    };
+
+    return {
+      warm_path: parsed.warm_path ?? "",
+      trigger_notes: parsed.trigger_notes ?? "",
+      notes: parsed.notes ?? "",
     };
   } catch {
     return null;

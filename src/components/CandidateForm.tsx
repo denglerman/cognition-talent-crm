@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, Link, Loader2 } from "lucide-react";
+import { X, Link, Loader2, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import { addWeeks } from "@/lib/utils";
-import { parseLinkedInProfile } from "@/lib/actions";
+import { parseLinkedInProfile, parseMeetingNotes } from "@/lib/actions";
 import type { Candidate, CandidateFormData, CandidateStatus, CandidateFunction, TouchChannel } from "@/lib/types";
 
 export default function CandidateForm({
@@ -38,6 +38,12 @@ export default function CandidateForm({
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState("");
 
+  const [meetingNotesText, setMeetingNotesText] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseError, setParseError] = useState("");
+  const [showMeetingNotes, setShowMeetingNotes] = useState(false);
+  const [parseSuccess, setParseSuccess] = useState(false);
+
   const handleLinkedInImport = async () => {
     if (!linkedinImportUrl.trim()) return;
     setIsImporting(true);
@@ -62,6 +68,35 @@ export default function CandidateForm({
       setImportError("Failed to fetch profile. Please try again.");
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleMeetingNotesParse = async () => {
+    if (!meetingNotesText.trim()) return;
+    setIsParsing(true);
+    setParseError("");
+    setParseSuccess(false);
+    try {
+      const result = await parseMeetingNotes(
+        meetingNotesText,
+        form.full_name || undefined
+      );
+      if (result) {
+        setForm((f) => ({
+          ...f,
+          warm_path: result.warm_path || f.warm_path,
+          trigger_notes: result.trigger_notes || f.trigger_notes,
+          notes: result.notes || f.notes,
+        }));
+        setParseSuccess(true);
+        setMeetingNotesText("");
+      } else {
+        setParseError("Could not extract information from the notes. Please try again.");
+      }
+    } catch {
+      setParseError("Failed to parse meeting notes. Please try again.");
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -263,6 +298,66 @@ export default function CandidateForm({
                 className="input-field"
               />
             </Field>
+          </div>
+
+          <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
+            <button
+              type="button"
+              onClick={() => setShowMeetingNotes(!showMeetingNotes)}
+              className="flex w-full items-center justify-between text-sm font-medium text-zinc-300 hover:text-zinc-100 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <FileText size={14} />
+                Paste Meeting Notes (AI extract)
+              </span>
+              {showMeetingNotes ? (
+                <ChevronUp size={14} />
+              ) : (
+                <ChevronDown size={14} />
+              )}
+            </button>
+            {showMeetingNotes && (
+              <div className="mt-3 space-y-3">
+                <textarea
+                  value={meetingNotesText}
+                  onChange={(e) => {
+                    setMeetingNotesText(e.target.value);
+                    setParseError("");
+                    setParseSuccess(false);
+                  }}
+                  placeholder="Paste meeting notes from Granola, Otter, Fireflies, etc. AI will extract warm path, trigger notes, and a summary..."
+                  rows={5}
+                  className="input-field resize-none w-full text-sm"
+                />
+                <div className="flex items-center justify-between">
+                  <div>
+                    {parseError && (
+                      <p className="text-xs text-red-400">{parseError}</p>
+                    )}
+                    {parseSuccess && (
+                      <p className="text-xs text-green-400">
+                        Extracted and filled Warm Path, Trigger Notes, and Notes
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleMeetingNotesParse}
+                    disabled={isParsing || !meetingNotesText.trim()}
+                    className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  >
+                    {isParsing ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Extracting...
+                      </>
+                    ) : (
+                      "Extract Fields"
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <Field label="Warm Path">
