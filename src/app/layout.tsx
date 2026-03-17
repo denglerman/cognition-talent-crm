@@ -19,10 +19,16 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${geist.className} antialiased min-h-screen`}>
         <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-40">
-          <div className="mx-auto max-w-6xl px-4 py-3">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
             <Link href="/" className="text-lg font-semibold text-zinc-100">
               <span className="text-indigo-400 font-bold">Bench Signal</span>{" "}
               <em>Cognition Talent CRM</em>
+            </Link>
+            <Link
+              href="/queue"
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
+            >
+              Queue
             </Link>
           </div>
         </header>

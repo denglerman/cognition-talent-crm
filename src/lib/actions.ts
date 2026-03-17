@@ -380,6 +380,19 @@ export async function batchUpdateCandidates(
   revalidatePath("/");
 }
 
+export async function getQueueCandidates() {
+  const supabase = getSupabase();
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await supabase
+    .from("candidates")
+    .select("*")
+    .lte("next_touchpoint_date", today)
+    .not("next_touchpoint_date", "is", null)
+    .order("next_touchpoint_date", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function getEmailDrafts(candidateId: string) {
   const supabase = getSupabase();
   const { data, error } = await supabase
