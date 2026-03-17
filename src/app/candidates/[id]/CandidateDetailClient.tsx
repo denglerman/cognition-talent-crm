@@ -25,6 +25,18 @@ import type {
   CandidateStatus,
 } from "@/lib/types";
 
+function truncateUrl(url: string, maxLength = 40): string {
+  try {
+    if (url.length <= maxLength) return url;
+    const parsed = new URL(url);
+    const path = parsed.pathname + parsed.search;
+    const short = parsed.hostname + (path.length > 20 ? path.slice(0, 17) + "..." : path);
+    return short.length <= maxLength ? short : short.slice(0, maxLength - 3) + "...";
+  } catch {
+    return url.length <= maxLength ? url : url.slice(0, maxLength - 3) + "...";
+  }
+}
+
 function InfoItem({
   label,
   value,
@@ -44,9 +56,10 @@ function InfoItem({
           href={value}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors break-all"
+          title={value}
+          className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors truncate block"
         >
-          {value}
+          {truncateUrl(value)}
         </a>
       ) : (
         <p className="text-sm text-zinc-300">{value || "—"}</p>
