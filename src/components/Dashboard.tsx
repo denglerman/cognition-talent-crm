@@ -161,8 +161,8 @@ export default function Dashboard({
         </button>
       </div>
 
-      <ThisWeek candidates={candidates} />
       <NeedsAttention candidates={candidates} />
+      <ThisWeek candidates={candidates} />
       <SearchBar value={search} onChange={setSearch} />
       <FilterBar
         statusFilter={statusFilter}
