@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Pencil, Trash2, ChevronDown, Sparkles, Copy, Check, X } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import TouchpointLog from "@/components/TouchpointLog";
+import TouchpointTimeline from "@/components/TouchpointTimeline";
 import CandidateForm from "@/components/CandidateForm";
 import {
   updateCandidate,
@@ -86,6 +87,7 @@ export default function CandidateDetailClient({
   const [outreachEmail, setOutreachEmail] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<"timeline" | "table">("timeline");
 
   const handleUpdateStatus = async (status: CandidateStatus) => {
     try {
@@ -310,7 +312,42 @@ export default function CandidateDetailClient({
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-        <TouchpointLog touchpoints={touchpoints} onAdd={handleAddTouchpoint} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1 rounded-lg bg-zinc-800/80 p-1">
+            <button
+              onClick={() => setActiveTab("timeline")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeTab === "timeline"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Timeline
+            </button>
+            <button
+              onClick={() => setActiveTab("table")}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeTab === "table"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Table
+            </button>
+          </div>
+        </div>
+
+        {activeTab === "timeline" ? (
+          <TouchpointTimeline touchpoints={touchpoints} />
+        ) : (
+          <TouchpointLog touchpoints={touchpoints} onAdd={handleAddTouchpoint} />
+        )}
+
+        {activeTab === "timeline" && (
+          <div className="mt-4 pt-4 border-t border-zinc-800">
+            <TouchpointLog touchpoints={[]} onAdd={handleAddTouchpoint} />
+          </div>
+        )}
       </div>
 
       {showEditForm && (
