@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS candidates (
   next_touchpoint_date DATE,
   notes TEXT,
   ashby_url TEXT,
+  status_updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

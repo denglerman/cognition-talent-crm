@@ -33,6 +33,7 @@ export default function CandidateForm({
     next_touchpoint_date: candidate?.next_touchpoint_date ?? "",
     notes: candidate?.notes ?? "",
     ashby_url: candidate?.ashby_url ?? "",
+    status_updated_at: candidate?.status_updated_at ?? new Date().toISOString(),
   });
 
   const [linkedinImportUrl, setLinkedinImportUrl] = useState("");

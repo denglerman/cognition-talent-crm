@@ -50,9 +50,12 @@ export async function updateCandidate(
   updates: Partial<CandidateFormData>
 ) {
   const supabase = getSupabase();
+  const payload = updates.status
+    ? { ...updates, status_updated_at: new Date().toISOString() }
+    : updates;
   const { data, error } = await supabase
     .from("candidates")
-    .update(updates)
+    .update(payload)
     .eq("id", id)
     .select()
     .single();
@@ -339,9 +342,12 @@ export async function batchUpdateCandidates(
 ) {
   if (ids.length === 0) return;
   const supabase = getSupabase();
+  const payload = updates.status
+    ? { ...updates, status_updated_at: new Date().toISOString() }
+    : updates;
   const { error } = await supabase
     .from("candidates")
-    .update(updates)
+    .update(payload)
     .in("id", ids);
   if (error) throw new Error(error.message);
   revalidatePath("/");

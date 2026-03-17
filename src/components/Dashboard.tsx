@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, X, Clock, Loader2 } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterBar from "./FilterBar";
+import ThisWeek from "./ThisWeek";
 import NeedsAttention from "./NeedsAttention";
 import CandidateTable from "./CandidateTable";
 import CandidateForm from "./CandidateForm";
@@ -160,6 +161,7 @@ export default function Dashboard({
         </button>
       </div>
 
+      <ThisWeek candidates={candidates} />
       <NeedsAttention candidates={candidates} />
       <SearchBar value={search} onChange={setSearch} />
       <FilterBar
