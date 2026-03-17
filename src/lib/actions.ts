@@ -245,6 +245,75 @@ Return ONLY valid JSON with these three string fields: warm_path, trigger_notes,
   }
 }
 
+export async function generateOutreachEmail(context: {
+  full_name: string;
+  current_company: string;
+  current_role: string;
+  status: string;
+  trigger_notes: string | null;
+  warm_path: string | null;
+  notes: string | null;
+  last_touch_date: string | null;
+  last_touch_channel: string | null;
+  touchpoints: { date: string; channel: string; notes: string | null }[];
+}): Promise<string | null> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const touchpointHistory = context.touchpoints.length > 0
+      ? context.touchpoints
+          .map(
+            (tp) =>
+              `- ${tp.date} (${tp.channel}): ${tp.notes || "No notes"}`
+          )
+          .join("\n")
+      : "No previous touchpoints logged.";
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "system",
+          content: `You are a recruiter at Cognition, an AI company building Devin (the AI software engineer). You write short, personal outreach emails to engineering and product candidates.
+
+Your style:
+- SHORT lines, like text messages. Each line is 1-2 sentences max.
+- Line breaks between each thought. NOT long paragraphs.
+- Warm, genuine, not salesy or corporate.
+- Reference specific details from their profile and past conversations.
+- If there's a warm path (mutual connection), use it naturally.
+- If there are trigger notes (what would make them move), subtly weave that in.
+- If you've spoken before, reference when and what you discussed.
+- Keep the whole email under 100 words.
+- No subject line needed — just the email body.
+- Sign off with just "Alex" (the recruiter's name).
+- Do NOT use brackets or placeholders. Write the actual email.`,
+        },
+        {
+          role: "user",
+          content: `Generate an outreach email for this candidate:
+
+Name: ${context.full_name}
+Role: ${context.current_role} at ${context.current_company}
+Status: ${context.status}
+${context.warm_path ? `Warm Path: ${context.warm_path}` : ""}
+${context.trigger_notes ? `Trigger Notes: ${context.trigger_notes}` : ""}
+${context.notes ? `Notes: ${context.notes}` : ""}
+${context.last_touch_date ? `Last Contact: ${context.last_touch_date} via ${context.last_touch_channel}` : "Never contacted before."}
+
+Touchpoint History:
+${touchpointHistory}`,
+        },
+      ],
+    });
+
+    return response.choices[0]?.message?.content ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createTouchpoint(touchpoint: {
   candidate_id: string;
   date: string;

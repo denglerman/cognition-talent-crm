@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, ChevronDown, Sparkles, Copy, Check, X } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import TouchpointLog from "@/components/TouchpointLog";
 import CandidateForm from "@/components/CandidateForm";
@@ -11,6 +11,7 @@ import {
   updateCandidate,
   deleteCandidate,
   createTouchpoint,
+  generateOutreachEmail,
 } from "@/lib/actions";
 import {
   formatDate,
@@ -68,6 +69,10 @@ export default function CandidateDetailClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOutreach, setShowOutreach] = useState(false);
+  const [outreachEmail, setOutreachEmail] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const handleUpdateStatus = async (status: CandidateStatus) => {
     try {
@@ -99,6 +104,42 @@ export default function CandidateDetailClient({
     } catch (err) {
       console.error("Failed to delete candidate:", err);
     }
+  };
+
+  const handleGenerateOutreach = async () => {
+    setShowOutreach(true);
+    setIsGenerating(true);
+    setOutreachEmail("");
+    setCopied(false);
+    try {
+      const email = await generateOutreachEmail({
+        full_name: candidate.full_name,
+        current_company: candidate.current_company,
+        current_role: candidate.current_role,
+        status: candidate.status,
+        trigger_notes: candidate.trigger_notes,
+        warm_path: candidate.warm_path,
+        notes: candidate.notes,
+        last_touch_date: candidate.last_touch_date,
+        last_touch_channel: candidate.last_touch_channel,
+        touchpoints: touchpoints.map((tp) => ({
+          date: tp.date,
+          channel: tp.channel,
+          notes: tp.notes,
+        })),
+      });
+      setOutreachEmail(email ?? "Failed to generate email. Please try again.");
+    } catch {
+      setOutreachEmail("Failed to generate email. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyOutreach = async () => {
+    await navigator.clipboard.writeText(outreachEmail);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleAddTouchpoint = async (data: {
@@ -182,6 +223,12 @@ export default function CandidateDetailClient({
               )}
             </div>
             <button
+              onClick={handleGenerateOutreach}
+              className="rounded-lg border border-indigo-500/50 px-3 py-2 text-sm font-medium text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-400 transition-colors flex items-center gap-1"
+            >
+              <Sparkles size={14} /> Generate Outreach
+            </button>
+            <button
               onClick={() => setShowEditForm(true)}
               className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors flex items-center gap-1"
             >
@@ -260,6 +307,54 @@ export default function CandidateDetailClient({
           onClose={() => setShowEditForm(false)}
           isSubmitting={isSubmitting}
         />
+      )}
+
+      {showOutreach && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg mx-4 rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Sparkles size={18} className="text-indigo-400" /> AI Outreach Email
+              </h3>
+              <button
+                onClick={() => setShowOutreach(false)}
+                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {isGenerating ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                  <p className="text-sm text-zinc-400">Generating personalized outreach...</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4 max-h-80 overflow-y-auto">
+                  <p className="text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                    {outreachEmail}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center mt-4">
+                  <button
+                    onClick={handleGenerateOutreach}
+                    className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors flex items-center gap-1"
+                  >
+                    <Sparkles size={14} /> Regenerate
+                  </button>
+                  <button
+                    onClick={handleCopyOutreach}
+                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors flex items-center gap-1"
+                  >
+                    {copied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy to Clipboard</>}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {showDeleteConfirm && (
