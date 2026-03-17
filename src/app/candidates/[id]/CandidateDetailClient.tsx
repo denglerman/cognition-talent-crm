@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, ChevronDown, Sparkles, Copy, Check, X } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, ChevronDown, Sparkles, Copy, Check, X, RefreshCw } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import TouchpointLog from "@/components/TouchpointLog";
 import TouchpointTimeline from "@/components/TouchpointTimeline";
@@ -13,6 +13,7 @@ import {
   deleteCandidate,
   createTouchpoint,
   generateOutreachEmail,
+  generateWhyReachOut,
 } from "@/lib/actions";
 import {
   formatDate,
@@ -88,6 +89,29 @@ export default function CandidateDetailClient({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"timeline" | "table">("timeline");
+  const [whyReachOut, setWhyReachOut] = useState<string | null>(null);
+  const [isGeneratingWhy, setIsGeneratingWhy] = useState(false);
+
+  const handleGenerateWhyReachOut = useCallback(async () => {
+    if (!candidate.signals) return;
+    setIsGeneratingWhy(true);
+    try {
+      const result = await generateWhyReachOut(candidate.signals);
+      setWhyReachOut(result);
+    } catch {
+      setWhyReachOut(null);
+    } finally {
+      setIsGeneratingWhy(false);
+    }
+  }, [candidate.signals]);
+
+  useEffect(() => {
+    if (candidate.signals) {
+      handleGenerateWhyReachOut();
+    } else {
+      setWhyReachOut(null);
+    }
+  }, [candidate.signals, handleGenerateWhyReachOut]);
 
   const handleUpdateStatus = async (status: CandidateStatus) => {
     try {
@@ -202,6 +226,27 @@ export default function CandidateDetailClient({
             <p className="text-zinc-400 mt-1">
               {candidate.current_role} @ {candidate.current_company}
             </p>
+            {candidate.signals && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5">
+                  {isGeneratingWhy ? (
+                    <span className="text-xs text-amber-300/70 animate-pulse">Generating insight...</span>
+                  ) : whyReachOut ? (
+                    <span className="text-xs font-medium text-amber-300">{whyReachOut}</span>
+                  ) : (
+                    <span className="text-xs text-amber-300/50">Could not generate insight</span>
+                  )}
+                </div>
+                <button
+                  onClick={handleGenerateWhyReachOut}
+                  disabled={isGeneratingWhy}
+                  className="text-amber-400/60 hover:text-amber-300 transition-colors disabled:opacity-40"
+                  title="Regenerate"
+                >
+                  <RefreshCw size={14} className={isGeneratingWhy ? "animate-spin" : ""} />
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-3 mt-3">
               <StatusBadge status={candidate.status} />
               <span className="text-sm text-zinc-500">
@@ -287,6 +332,15 @@ export default function CandidateDetailClient({
               Warm Path
             </h3>
             <p className="text-sm text-zinc-300">{candidate.warm_path}</p>
+          </div>
+        )}
+
+        {candidate.signals && (
+          <div className="mt-4">
+            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+              Signals
+            </h3>
+            <p className="text-sm text-zinc-300 whitespace-pre-wrap">{candidate.signals}</p>
           </div>
         )}
 

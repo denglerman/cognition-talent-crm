@@ -336,6 +336,33 @@ ${touchpointHistory}`,
   }
 }
 
+export async function generateWhyReachOut(
+  signals: string
+): Promise<string | null> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.5,
+      max_tokens: 60,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a technical recruiter's assistant. Based on the following signal about a candidate, write one short, specific sentence (max 20 words) explaining why now is a good time to reach out. Do not use quotes or prefixes. Just the sentence.",
+        },
+        {
+          role: "user",
+          content: `Signal: ${signals}`,
+        },
+      ],
+    });
+    return response.choices[0]?.message?.content?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function batchUpdateCandidates(
   ids: string[],
   updates: Partial<CandidateFormData>

@@ -33,6 +33,7 @@ export default function CandidateForm({
     next_touchpoint_date: candidate?.next_touchpoint_date ?? "",
     notes: candidate?.notes ?? "",
     ashby_url: candidate?.ashby_url ?? "",
+    signals: candidate?.signals ?? "",
     status_updated_at: candidate?.status_updated_at ?? new Date().toISOString(),
   });
 
@@ -171,6 +172,7 @@ export default function CandidateForm({
       next_touchpoint_date: form.next_touchpoint_date || null,
       notes: form.notes || null,
       ashby_url: form.ashby_url || null,
+      signals: form.signals || null,
     };
     onSubmit(data);
   };
@@ -474,6 +476,16 @@ export default function CandidateForm({
               value={form.trigger_notes ?? ""}
               onChange={(e) => setForm({ ...form, trigger_notes: e.target.value })}
               placeholder="What would make them move?"
+              rows={2}
+              className="input-field resize-none"
+            />
+          </Field>
+
+          <Field label="Signals">
+            <textarea
+              value={form.signals ?? ""}
+              onChange={(e) => setForm({ ...form, signals: e.target.value })}
+              placeholder="Recent publication, funding news, job change, etc."
               rows={2}
               className="input-field resize-none"
             />

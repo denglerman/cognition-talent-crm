@@ -19,6 +19,7 @@ export interface Candidate {
   next_touchpoint_date: string | null;
   notes: string | null;
   ashby_url: string | null;
+  signals: string | null;
   status_updated_at: string;
   created_at: string;
 }
