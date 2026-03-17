@@ -79,6 +79,109 @@ export async function getTouchpoints(candidateId: string) {
   return data;
 }
 
+export async function parseLinkedInProfile(url: string): Promise<{
+  full_name: string;
+  current_company: string;
+  current_role: string;
+  linkedin_url: string;
+} | null> {
+  try {
+    // Normalize the LinkedIn URL
+    const cleanUrl = url.trim().split("?")[0].replace(/\/$/, "");
+    if (!cleanUrl.includes("linkedin.com/in/")) {
+      return null;
+    }
+
+    const res = await fetch(cleanUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      redirect: "follow",
+    });
+
+    if (!res.ok) return null;
+
+    const html = await res.text();
+
+    // Try og:title first: usually "Name - Role - Company | LinkedIn"
+    const ogTitleMatch = html.match(
+      /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i
+    ) ??
+      html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i
+      );
+
+    // Try <title> tag as fallback
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+
+    const raw = ogTitleMatch?.[1] ?? titleMatch?.[1] ?? "";
+    // Remove "| LinkedIn" suffix
+    const cleaned = raw.replace(/\s*\|\s*LinkedIn\s*$/i, "").trim();
+
+    if (!cleaned) return null;
+
+    // Parse "Name - Role - Company" or "Name - Role at Company"
+    const parts = cleaned.split(" - ").map((s) => s.trim());
+
+    let full_name = "";
+    let current_role = "";
+    let current_company = "";
+
+    if (parts.length >= 3) {
+      full_name = parts[0];
+      current_role = parts[1];
+      current_company = parts.slice(2).join(" - ");
+    } else if (parts.length === 2) {
+      full_name = parts[0];
+      // Second part might be "Role at Company"
+      const atSplit = parts[1].split(/ at /i);
+      if (atSplit.length >= 2) {
+        current_role = atSplit[0].trim();
+        current_company = atSplit.slice(1).join(" at ").trim();
+      } else {
+        current_role = parts[1];
+      }
+    } else {
+      full_name = parts[0];
+    }
+
+    // Also try to get description for more context
+    const ogDescMatch = html.match(
+      /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i
+    ) ??
+      html.match(
+        /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i
+      );
+
+    // Description often has better company/role info
+    if (ogDescMatch?.[1] && (!current_company || !current_role)) {
+      const desc = ogDescMatch[1];
+      // Common patterns: "Role at Company" or "Company · Role"
+      const atMatch = desc.match(/^([^·]+)\s+at\s+([^·.]+)/i);
+      const dotMatch = desc.match(/^([^·]+)·\s*([^·]+)/);
+      if (atMatch && !current_role) {
+        current_role = current_role || atMatch[1].trim();
+        current_company = current_company || atMatch[2].trim();
+      } else if (dotMatch && !current_company) {
+        current_company = current_company || dotMatch[1].trim();
+      }
+    }
+
+    return {
+      full_name,
+      current_company,
+      current_role,
+      linkedin_url: cleanUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function createTouchpoint(touchpoint: {
   candidate_id: string;
   date: string;

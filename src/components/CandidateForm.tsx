@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Link, Loader2 } from "lucide-react";
 import { addWeeks } from "@/lib/utils";
+import { parseLinkedInProfile } from "@/lib/actions";
 import type { Candidate, CandidateFormData, CandidateStatus, CandidateFunction, TouchChannel } from "@/lib/types";
 
 export default function CandidateForm({
@@ -32,6 +33,37 @@ export default function CandidateForm({
     next_touchpoint_date: candidate?.next_touchpoint_date ?? "",
     notes: candidate?.notes ?? "",
   });
+
+  const [linkedinImportUrl, setLinkedinImportUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState("");
+
+  const handleLinkedInImport = async () => {
+    if (!linkedinImportUrl.trim()) return;
+    setIsImporting(true);
+    setImportError("");
+    try {
+      const result = await parseLinkedInProfile(linkedinImportUrl);
+      if (result) {
+        setForm((f) => ({
+          ...f,
+          full_name: result.full_name || f.full_name,
+          current_company: result.current_company || f.current_company,
+          current_role: result.current_role || f.current_role,
+          linkedin_url: result.linkedin_url || f.linkedin_url,
+        }));
+        setLinkedinImportUrl("");
+      } else {
+        setImportError(
+          "Could not parse profile. The URL may be private or invalid."
+        );
+      }
+    } catch {
+      setImportError("Failed to fetch profile. Please try again.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleStatusChange = (status: CandidateStatus) => {
     const updates: Partial<CandidateFormData> = { status };
@@ -70,6 +102,56 @@ export default function CandidateForm({
             <X size={20} />
           </button>
         </div>
+
+        {!candidate && (
+          <div className="mx-6 mt-4 rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
+            <label className="mb-2 block text-xs font-medium text-zinc-400">
+              Import from LinkedIn
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Link
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                />
+                <input
+                  type="url"
+                  value={linkedinImportUrl}
+                  onChange={(e) => {
+                    setLinkedinImportUrl(e.target.value);
+                    setImportError("");
+                  }}
+                  placeholder="https://linkedin.com/in/username"
+                  className="input-field pl-9 w-full"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleLinkedInImport();
+                    }
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleLinkedInImport}
+                disabled={isImporting || !linkedinImportUrl.trim()}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  "Import"
+                )}
+              </button>
+            </div>
+            {importError && (
+              <p className="mt-2 text-xs text-red-400">{importError}</p>
+            )}
+          </div>
+        )}
 
         {form.status === "ready" && (
           <div className="mx-6 mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
