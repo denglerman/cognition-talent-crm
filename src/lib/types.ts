@@ -18,6 +18,7 @@ export interface Candidate {
   last_touch_channel: TouchChannel | null;
   next_touchpoint_date: string | null;
   notes: string | null;
+  ashby_url: string | null;
   created_at: string;
 }
 

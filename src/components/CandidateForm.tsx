@@ -32,6 +32,7 @@ export default function CandidateForm({
     last_touch_channel: candidate?.last_touch_channel ?? null,
     next_touchpoint_date: candidate?.next_touchpoint_date ?? "",
     notes: candidate?.notes ?? "",
+    ashby_url: candidate?.ashby_url ?? "",
   });
 
   const [linkedinImportUrl, setLinkedinImportUrl] = useState("");
@@ -119,6 +120,7 @@ export default function CandidateForm({
       last_touch_channel: form.last_touch_channel || null,
       next_touchpoint_date: form.next_touchpoint_date || null,
       notes: form.notes || null,
+      ashby_url: form.ashby_url || null,
     };
     onSubmit(data);
   };
@@ -227,6 +229,15 @@ export default function CandidateForm({
                 required
                 value={form.linkedin_url}
                 onChange={(e) => setForm({ ...form, linkedin_url: e.target.value })}
+                className="input-field"
+              />
+            </Field>
+            <Field label="Ashby ATS URL">
+              <input
+                type="url"
+                value={form.ashby_url ?? ""}
+                onChange={(e) => setForm({ ...form, ashby_url: e.target.value })}
+                placeholder="https://app.ashbyhq.com/..."
                 className="input-field"
               />
             </Field>

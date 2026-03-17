@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS candidates (
   last_touch_channel TEXT CHECK (last_touch_channel IS NULL OR last_touch_channel IN ('linkedin', 'email', 'text', 'event', 'other')),
   next_touchpoint_date DATE,
   notes TEXT,
+  ashby_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
