@@ -1,0 +1,293 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Pencil, Trash2, ChevronDown } from "lucide-react";
+import StatusBadge from "@/components/StatusBadge";
+import TouchpointLog from "@/components/TouchpointLog";
+import CandidateForm from "@/components/CandidateForm";
+import {
+  updateCandidate,
+  deleteCandidate,
+  createTouchpoint,
+} from "@/lib/actions";
+import {
+  formatDate,
+  getFunctionLabel,
+  getChannelLabel,
+} from "@/lib/utils";
+import type {
+  Candidate,
+  Touchpoint,
+  CandidateFormData,
+  CandidateStatus,
+} from "@/lib/types";
+
+function InfoItem({
+  label,
+  value,
+  isLink,
+}: {
+  label: string;
+  value: string | null;
+  isLink?: boolean;
+}) {
+  return (
+    <div>
+      <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-1">
+        {label}
+      </h3>
+      {value && isLink ? (
+        <a
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors break-all"
+        >
+          {value}
+        </a>
+      ) : (
+        <p className="text-sm text-zinc-300">{value || "—"}</p>
+      )}
+    </div>
+  );
+}
+
+export default function CandidateDetailClient({
+  candidate: initialCandidate,
+  touchpoints: initialTouchpoints,
+}: {
+  candidate: Candidate;
+  touchpoints: Touchpoint[];
+}) {
+  const router = useRouter();
+  const [candidate, setCandidate] = useState(initialCandidate);
+  const [touchpoints, setTouchpoints] = useState(initialTouchpoints);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleUpdateStatus = async (status: CandidateStatus) => {
+    try {
+      const updated = await updateCandidate(candidate.id, { status });
+      setCandidate(updated);
+      setShowStatusMenu(false);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+  };
+
+  const handleEdit = async (data: CandidateFormData) => {
+    setIsSubmitting(true);
+    try {
+      const updated = await updateCandidate(candidate.id, data);
+      setCandidate(updated);
+      setShowEditForm(false);
+    } catch (err) {
+      console.error("Failed to update candidate:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteCandidate(candidate.id);
+      router.push("/");
+    } catch (err) {
+      console.error("Failed to delete candidate:", err);
+    }
+  };
+
+  const handleAddTouchpoint = async (data: {
+    date: string;
+    channel: string;
+    notes: string;
+  }) => {
+    const tp = await createTouchpoint({
+      candidate_id: candidate.id,
+      date: data.date,
+      channel: data.channel,
+      notes: data.notes || undefined,
+    });
+    setTouchpoints((prev) => [tp, ...prev]);
+    setCandidate((prev) => ({
+      ...prev,
+      last_touch_date: data.date,
+      last_touch_channel: data.channel as Candidate["last_touch_channel"],
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      <Link
+        href="/"
+        className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+      >
+        <ArrowLeft size={16} /> Back to pipeline
+      </Link>
+
+      {candidate.status === "ready" && (
+        <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+          <p className="text-sm font-medium text-green-400">
+            🟢 This candidate is ready — loop in Patrick
+          </p>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              {candidate.full_name}
+            </h1>
+            <p className="text-zinc-400 mt-1">
+              {candidate.current_role} @ {candidate.current_company}
+            </p>
+            <div className="flex items-center gap-3 mt-3">
+              <StatusBadge status={candidate.status} />
+              <span className="text-sm text-zinc-500">
+                {getFunctionLabel(candidate.function)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <button
+                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors flex items-center gap-1"
+              >
+                Update Status <ChevronDown size={14} />
+              </button>
+              {showStatusMenu && (
+                <div className="absolute right-0 mt-1 w-40 rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl z-10">
+                  {(["cold", "warm", "ready"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleUpdateStatus(s)}
+                      className={`block w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                        candidate.status === s
+                          ? "text-indigo-400"
+                          : "text-zinc-300"
+                      }`}
+                    >
+                      {s === "cold" ? "🔴" : s === "warm" ? "🟡" : "🟢"}{" "}
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setShowEditForm(true)}
+              className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors flex items-center gap-1"
+            >
+              <Pencil size={14} /> Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="rounded-lg border border-red-700/50 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:border-red-600 transition-colors flex items-center gap-1"
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 pt-6 border-t border-zinc-800">
+          <InfoItem label="LinkedIn" value={candidate.linkedin_url} isLink />
+          <InfoItem label="Email" value={candidate.email} />
+          <InfoItem label="Phone" value={candidate.phone} />
+          <InfoItem
+            label="Last Touch"
+            value={
+              candidate.last_touch_date
+                ? `${formatDate(candidate.last_touch_date)}${candidate.last_touch_channel ? ` (${getChannelLabel(candidate.last_touch_channel)})` : ""}`
+                : null
+            }
+          />
+          <InfoItem
+            label="Next Touchpoint"
+            value={formatDate(candidate.next_touchpoint_date)}
+          />
+          <InfoItem
+            label="Created"
+            value={formatDate(candidate.created_at)}
+          />
+        </div>
+
+        {candidate.warm_path && (
+          <div className="mt-6 pt-6 border-t border-zinc-800">
+            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+              Warm Path
+            </h3>
+            <p className="text-sm text-zinc-300">{candidate.warm_path}</p>
+          </div>
+        )}
+
+        {candidate.trigger_notes && (
+          <div className="mt-4">
+            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+              Trigger Notes
+            </h3>
+            <p className="text-sm text-zinc-300">{candidate.trigger_notes}</p>
+          </div>
+        )}
+
+        {candidate.notes && (
+          <div className="mt-4">
+            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+              Notes
+            </h3>
+            <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+              {candidate.notes}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+        <TouchpointLog touchpoints={touchpoints} onAdd={handleAddTouchpoint} />
+      </div>
+
+      {showEditForm && (
+        <CandidateForm
+          candidate={candidate}
+          onSubmit={handleEdit}
+          onClose={() => setShowEditForm(false)}
+          isSubmitting={isSubmitting}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm mx-4 rounded-xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Delete Candidate
+            </h3>
+            <p className="text-sm text-zinc-400 mb-6">
+              Are you sure you want to delete {candidate.full_name}? This action
+              cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
