@@ -74,23 +74,91 @@ ON CONFLICT DO NOTHING;
 
 -- Seed touchpoints
 INSERT INTO touchpoints (candidate_id, date, channel, notes)
-SELECT c.id, '2026-02-26'::date, 'linkedin', 'Sent a LinkedIn message about Cognition''s latest launch. She replied with interest and asked about team size.'
+-- Priya Sharma (6 touchpoints)
+SELECT c.id, '2025-11-08'::date, 'event', 'Met at NeurIPS 2025 poster session. She presented work on efficient training for large-scale models. Had a 20-minute conversation about infra challenges.'
+FROM candidates c WHERE c.full_name = 'Priya Sharma'
+UNION ALL
+SELECT c.id, '2025-12-02'::date, 'email', 'Sent a follow-up email referencing her poster. Mentioned Cognition''s approach to developer tools. She replied same day saying she''d be open to a casual chat.'
+FROM candidates c WHERE c.full_name = 'Priya Sharma'
+UNION ALL
+SELECT c.id, '2026-01-10'::date, 'linkedin', 'She shared a blog post about scaling training pipelines. Commented on it and DMed about how we''re tackling similar problems. Good engagement.'
 FROM candidates c WHERE c.full_name = 'Priya Sharma'
 UNION ALL
 SELECT c.id, '2026-01-15'::date, 'email', 'Followed up after NeurIPS with a personalized note about our inference challenges.'
 FROM candidates c WHERE c.full_name = 'Priya Sharma'
 UNION ALL
+SELECT c.id, '2026-02-05'::date, 'other', 'Patrick had dinner with her at a small AI founders gathering. She asked detailed questions about team culture and eng autonomy at Cognition.'
+FROM candidates c WHERE c.full_name = 'Priya Sharma'
+UNION ALL
+SELECT c.id, '2026-02-26'::date, 'linkedin', 'Sent a LinkedIn message about Cognition''s latest launch. She replied with interest and asked about team size.'
+FROM candidates c WHERE c.full_name = 'Priya Sharma'
+UNION ALL
+-- Marcus Chen (5 touchpoints)
+SELECT c.id, '2025-09-20'::date, 'linkedin', 'Connected on LinkedIn after reading his blog post on LLM inference optimization. Brief intro message, he accepted same day.'
+FROM candidates c WHERE c.full_name = 'Marcus Chen'
+UNION ALL
+SELECT c.id, '2025-10-15'::date, 'email', 'Sent a cold email referencing his CUDA kernel optimization work. He replied saying he''s happy at Anthropic but interested in staying in touch.'
+FROM candidates c WHERE c.full_name = 'Marcus Chen'
+UNION ALL
+SELECT c.id, '2025-11-22'::date, 'event', 'Ran into him at a Bay Area ML meetup. Chatted for 15 minutes about inference latency. He mentioned wanting to explore dev tools eventually.'
+FROM candidates c WHERE c.full_name = 'Marcus Chen'
+UNION ALL
 SELECT c.id, '2026-01-13'::date, 'event', 'Brief chat at AI Engineer Summit. Exchanged contact info.'
 FROM candidates c WHERE c.full_name = 'Marcus Chen'
 UNION ALL
-SELECT c.id, '2026-03-13'::date, 'email', 'She emailed asking about PM openings. Sent back the JD and scheduled a call for next week.'
+SELECT c.id, '2026-02-10'::date, 'linkedin', 'He posted about hitting a performance milestone at Anthropic. Congratulated him and asked if he''d be open to grabbing coffee. Left on read.'
+FROM candidates c WHERE c.full_name = 'Marcus Chen'
+UNION ALL
+-- Aaliya Johnson (6 touchpoints)
+SELECT c.id, '2025-10-05'::date, 'linkedin', 'Alex connected with her on LinkedIn via Stanford alumni network. She accepted and mentioned she''d been following Cognition.'
+FROM candidates c WHERE c.full_name = 'Aaliya Johnson'
+UNION ALL
+SELECT c.id, '2025-11-18'::date, 'email', 'Sent an intro email about PM roles at Cognition. She replied saying timing wasn''t right but to keep her posted.'
+FROM candidates c WHERE c.full_name = 'Aaliya Johnson'
+UNION ALL
+SELECT c.id, '2026-01-22'::date, 'linkedin', 'She liked our product launch post. DMed her asking how things were going at Stripe. She mentioned reorg rumors.'
+FROM candidates c WHERE c.full_name = 'Aaliya Johnson'
+UNION ALL
+SELECT c.id, '2026-02-28'::date, 'email', 'She reached out proactively asking about open PM roles. Sent back JD and availability. Very enthusiastic.'
 FROM candidates c WHERE c.full_name = 'Aaliya Johnson'
 UNION ALL
 SELECT c.id, '2026-03-02'::date, 'email', 'She followed up asking about team size and culture. Sent a detailed response.'
 FROM candidates c WHERE c.full_name = 'Aaliya Johnson'
 UNION ALL
+SELECT c.id, '2026-03-13'::date, 'email', 'She emailed asking about PM openings. Sent back the JD and scheduled a call for next week.'
+FROM candidates c WHERE c.full_name = 'Aaliya Johnson'
+UNION ALL
+-- James Okafor (6 touchpoints)
+SELECT c.id, '2025-08-10'::date, 'linkedin', 'Sarah introduced us over LinkedIn. He accepted the connection and we had a brief exchange about his work at Notion.'
+FROM candidates c WHERE c.full_name = 'James Okafor'
+UNION ALL
+SELECT c.id, '2025-09-25'::date, 'email', 'Sent a detailed email about technical leadership opportunities. He replied saying he loves IC work more than management.'
+FROM candidates c WHERE c.full_name = 'James Okafor'
+UNION ALL
+SELECT c.id, '2025-11-03'::date, 'other', 'Had a casual phone call. He talked about wanting to build systems from scratch again. Mentioned frustration with layers of management at Notion.'
+FROM candidates c WHERE c.full_name = 'James Okafor'
+UNION ALL
+SELECT c.id, '2025-12-20'::date, 'linkedin', 'Holiday check-in. He shared he''s been thinking more seriously about moving back to IC. Asked about Cognition''s eng culture.'
+FROM candidates c WHERE c.full_name = 'James Okafor'
+UNION ALL
+SELECT c.id, '2026-01-30'::date, 'email', 'Sent him a write-up about our technical challenges and team structure. He said it''s "exactly the kind of thing I want to work on."'
+FROM candidates c WHERE c.full_name = 'James Okafor'
+UNION ALL
 SELECT c.id, '2026-02-14'::date, 'linkedin', 'Casual check-in on LinkedIn. He mentioned he''s feeling burnt out on management.'
 FROM candidates c WHERE c.full_name = 'James Okafor'
+UNION ALL
+-- Elena Rodriguez (5 touchpoints)
+SELECT c.id, '2025-06-15'::date, 'event', 'Met at ProductCon SF. She gave a talk on building opinionated product workflows. Very impressive presence and product thinking.'
+FROM candidates c WHERE c.full_name = 'Elena Rodriguez'
+UNION ALL
+SELECT c.id, '2025-08-22'::date, 'linkedin', 'Connected on LinkedIn after the conference. She posted about Linear''s project management philosophy. Commented and got a reply.'
+FROM candidates c WHERE c.full_name = 'Elena Rodriguez'
+UNION ALL
+SELECT c.id, '2025-10-10'::date, 'email', 'Sent a thoughtful email about AI-first product design. She replied saying she finds the space fascinating but is committed to Linear for now.'
+FROM candidates c WHERE c.full_name = 'Elena Rodriguez'
+UNION ALL
+SELECT c.id, '2025-11-28'::date, 'linkedin', 'She shared an article about AI-native tools replacing traditional PM workflows. DMed about it — she said "this is where the industry is heading."'
+FROM candidates c WHERE c.full_name = 'Elena Rodriguez'
 UNION ALL
 SELECT c.id, '2025-12-16'::date, 'linkedin', 'Connected on LinkedIn after her talk at ProductCon. Brief intro message.'
 FROM candidates c WHERE c.full_name = 'Elena Rodriguez';
