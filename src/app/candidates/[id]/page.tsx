@@ -1,4 +1,4 @@
-import { getCandidate, getTouchpoints } from "@/lib/actions";
+import { getCandidate, getTouchpoints, getEmailDrafts } from "@/lib/actions";
 import CandidateDetailClient from "./CandidateDetailClient";
 import { notFound } from "next/navigation";
 
@@ -13,10 +13,12 @@ export default async function CandidateDetailPage({
 
   let candidate;
   let touchpoints;
+  let emailDrafts;
   try {
-    [candidate, touchpoints] = await Promise.all([
+    [candidate, touchpoints, emailDrafts] = await Promise.all([
       getCandidate(id),
       getTouchpoints(id),
+      getEmailDrafts(id),
     ]);
   } catch {
     notFound();
@@ -26,6 +28,7 @@ export default async function CandidateDetailPage({
     <CandidateDetailClient
       candidate={candidate}
       touchpoints={touchpoints}
+      emailDrafts={emailDrafts}
     />
   );
 }

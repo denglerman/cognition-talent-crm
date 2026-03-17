@@ -33,4 +33,12 @@ export interface Touchpoint {
   created_at: string;
 }
 
+export interface EmailDraft {
+  id: string;
+  candidate_id: string;
+  subject: string | null;
+  body: string;
+  created_at: string;
+}
+
 export type CandidateFormData = Omit<Candidate, "id" | "created_at">;

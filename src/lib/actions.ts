@@ -380,6 +380,32 @@ export async function batchUpdateCandidates(
   revalidatePath("/");
 }
 
+export async function getEmailDrafts(candidateId: string) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("email_drafts")
+    .select("*")
+    .eq("candidate_id", candidateId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function saveEmailDraft(draft: {
+  candidate_id: string;
+  subject?: string;
+  body: string;
+}) {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("email_drafts")
+    .insert(draft)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function createTouchpoint(touchpoint: {
   candidate_id: string;
   date: string;

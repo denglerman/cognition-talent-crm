@@ -14,6 +14,7 @@ import {
   createTouchpoint,
   generateOutreachEmail,
   generateWhyReachOut,
+  saveEmailDraft,
 } from "@/lib/actions";
 import {
   formatDate,
@@ -23,6 +24,7 @@ import {
 import type {
   Candidate,
   Touchpoint,
+  EmailDraft,
   CandidateFormData,
   CandidateStatus,
 } from "@/lib/types";
@@ -73,9 +75,11 @@ function InfoItem({
 export default function CandidateDetailClient({
   candidate: initialCandidate,
   touchpoints: initialTouchpoints,
+  emailDrafts: initialEmailDrafts,
 }: {
   candidate: Candidate;
   touchpoints: Touchpoint[];
+  emailDrafts: EmailDraft[];
 }) {
   const router = useRouter();
   const [candidate, setCandidate] = useState(initialCandidate);
@@ -89,6 +93,9 @@ export default function CandidateDetailClient({
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"timeline" | "table">("timeline");
+  const [emailDrafts, setEmailDrafts] = useState(initialEmailDrafts);
+  const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
+  const [copiedDraftId, setCopiedDraftId] = useState<string | null>(null);
   const [whyReachOut, setWhyReachOut] = useState<string | null>(null);
   const [isGeneratingWhy, setIsGeneratingWhy] = useState(false);
 
@@ -167,7 +174,20 @@ export default function CandidateDetailClient({
           notes: tp.notes,
         })),
       });
-      setOutreachEmail(email ?? "Failed to generate email. Please try again.");
+      if (email) {
+        setOutreachEmail(email);
+        try {
+          const saved = await saveEmailDraft({
+            candidate_id: candidate.id,
+            body: email,
+          });
+          setEmailDrafts((prev) => [saved, ...prev]);
+        } catch {
+          // Draft save failed silently — email still shown
+        }
+      } else {
+        setOutreachEmail("Failed to generate email. Please try again.");
+      }
     } catch {
       setOutreachEmail("Failed to generate email. Please try again.");
     } finally {
@@ -179,6 +199,12 @@ export default function CandidateDetailClient({
     await navigator.clipboard.writeText(outreachEmail);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyDraft = async (draftId: string, body: string) => {
+    await navigator.clipboard.writeText(body);
+    setCopiedDraftId(draftId);
+    setTimeout(() => setCopiedDraftId(null), 2000);
   };
 
   const handleAddTouchpoint = async (data: {
@@ -403,6 +429,56 @@ export default function CandidateDetailClient({
           </div>
         )}
       </div>
+
+      {emailDrafts.length > 0 && (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+          <h2 className="text-sm font-semibold text-white mb-4">Past Drafts</h2>
+          <div className="space-y-2">
+            {emailDrafts.map((draft) => {
+              const isExpanded = expandedDraftId === draft.id;
+              const lines = draft.body.split("\n").filter((l) => l.trim());
+              const preview = lines.slice(0, 2).join("\n");
+              const isTruncated = lines.length > 2;
+              return (
+                <div
+                  key={draft.id}
+                  className="rounded-lg border border-zinc-800 bg-zinc-800/30 p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      onClick={() =>
+                        setExpandedDraftId(isExpanded ? null : draft.id)
+                      }
+                      className="flex-1 text-left"
+                    >
+                      <p className="text-xs text-zinc-500 mb-1">
+                        {formatDate(draft.created_at)}
+                      </p>
+                      <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                        {isExpanded ? draft.body : preview}
+                        {!isExpanded && isTruncated && (
+                          <span className="text-zinc-500"> ...more</span>
+                        )}
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => handleCopyDraft(draft.id, draft.body)}
+                      className="mt-1 shrink-0 text-zinc-500 hover:text-zinc-300 transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      {copiedDraftId === draft.id ? (
+                        <Check size={14} className="text-green-400" />
+                      ) : (
+                        <Copy size={14} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showEditForm && (
         <CandidateForm

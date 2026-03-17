@@ -37,16 +37,30 @@ CREATE TABLE IF NOT EXISTS touchpoints (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Create email_drafts table
+CREATE TABLE IF NOT EXISTS email_drafts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+  subject TEXT,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Create index on touchpoints for candidate lookup
 CREATE INDEX IF NOT EXISTS idx_touchpoints_candidate_id ON touchpoints(candidate_id);
+
+-- Create index on email_drafts for candidate lookup
+CREATE INDEX IF NOT EXISTS idx_email_drafts_candidate_id ON email_drafts(candidate_id);
 
 -- Enable Row Level Security (allow all for now with service role)
 ALTER TABLE candidates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE touchpoints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_drafts ENABLE ROW LEVEL SECURITY;
 
 -- Create policies that allow all operations (since this is an internal tool)
 CREATE POLICY "Allow all on candidates" ON candidates FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all on touchpoints" ON touchpoints FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all on email_drafts" ON email_drafts FOR ALL USING (true) WITH CHECK (true);
 
 -- Seed data
 INSERT INTO candidates (full_name, current_company, "current_role", linkedin_url, email, phone, status, "function", trigger_notes, warm_path, last_touch_date, last_touch_channel, next_touchpoint_date, notes)
