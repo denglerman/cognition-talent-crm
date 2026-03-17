@@ -333,6 +333,20 @@ ${touchpointHistory}`,
   }
 }
 
+export async function batchUpdateCandidates(
+  ids: string[],
+  updates: Partial<CandidateFormData>
+) {
+  if (ids.length === 0) return;
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("candidates")
+    .update(updates)
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+}
+
 export async function createTouchpoint(touchpoint: {
   candidate_id: string;
   date: string;

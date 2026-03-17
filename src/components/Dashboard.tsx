@@ -2,14 +2,15 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, X, Clock, Loader2 } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterBar from "./FilterBar";
 import NeedsAttention from "./NeedsAttention";
 import CandidateTable from "./CandidateTable";
 import CandidateForm from "./CandidateForm";
-import { createCandidate } from "@/lib/actions";
-import type { Candidate, CandidateFormData } from "@/lib/types";
+import { createCandidate, batchUpdateCandidates } from "@/lib/actions";
+import { addWeeks } from "@/lib/utils";
+import type { Candidate, CandidateFormData, CandidateStatus } from "@/lib/types";
 
 export default function Dashboard({
   candidates,
@@ -24,6 +25,65 @@ export default function Dashboard({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmAction, setConfirmAction] = useState<
+    | { type: "status"; value: CandidateStatus }
+    | { type: "snooze" }
+    | null
+  >(null);
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setConfirmAction(null);
+  };
+
+  const toggleAll = () => {
+    if (filtered.length > 0 && filtered.every((c) => selectedIds.has(c.id))) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((c) => c.id)));
+    }
+    setConfirmAction(null);
+  };
+
+  const handleBatchConfirm = async () => {
+    if (!confirmAction || selectedIds.size === 0) return;
+    setIsBatchUpdating(true);
+    try {
+      const ids = Array.from(selectedIds);
+      if (confirmAction.type === "status") {
+        await batchUpdateCandidates(ids, { status: confirmAction.value });
+      } else if (confirmAction.type === "snooze") {
+        // Group candidates by status to apply correct snooze duration
+        const candidateMap = new Map(candidates.map((c) => [c.id, c]));
+        const warmIds = ids.filter((id) => candidateMap.get(id)?.status !== "cold");
+        const coldIds = ids.filter((id) => candidateMap.get(id)?.status === "cold");
+        if (warmIds.length > 0) {
+          await batchUpdateCandidates(warmIds, {
+            next_touchpoint_date: addWeeks(6),
+          });
+        }
+        if (coldIds.length > 0) {
+          await batchUpdateCandidates(coldIds, {
+            next_touchpoint_date: addWeeks(12),
+          });
+        }
+      }
+      setSelectedIds(new Set());
+      setConfirmAction(null);
+      router.refresh();
+    } catch (err) {
+      console.error("Batch update failed:", err);
+    } finally {
+      setIsBatchUpdating(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     let result = candidates;
@@ -114,7 +174,81 @@ export default function Dashboard({
           setSortOrder((o) => (o === "asc" ? "desc" : "asc"))
         }
       />
-      <CandidateTable candidates={filtered} />
+      <CandidateTable
+        candidates={filtered}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelect}
+        onToggleAll={toggleAll}
+      />
+
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-900/95 backdrop-blur-md shadow-2xl p-4">
+            {confirmAction ? (
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-zinc-300">
+                  {confirmAction.type === "status"
+                    ? `Set ${selectedIds.size} candidate${selectedIds.size > 1 ? "s" : ""} to ${confirmAction.value}?`
+                    : `Snooze ${selectedIds.size} candidate${selectedIds.size > 1 ? "s" : ""}? (6 weeks warm, 12 weeks cold)`}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setConfirmAction(null)}
+                    className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleBatchConfirm}
+                    disabled={isBatchUpdating}
+                    className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                  >
+                    {isBatchUpdating ? (
+                      <><Loader2 size={12} className="animate-spin" /> Updating...</>
+                    ) : (
+                      "Confirm"
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-zinc-200">
+                  {selectedIds.size} selected
+                </span>
+                <div className="flex items-center gap-2">
+                  {(["cold", "warm", "ready"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setConfirmAction({ type: "status", value: s })}
+                      className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
+                    >
+                      {s === "cold" ? "\u{1F534}" : s === "warm" ? "\u{1F7E1}" : "\u{1F7E2}"}{" "}
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setConfirmAction({ type: "snooze" })}
+                    className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors flex items-center gap-1"
+                  >
+                    <Clock size={12} /> Snooze
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedIds(new Set());
+                      setConfirmAction(null);
+                    }}
+                    className="rounded-lg border border-zinc-700 px-2 py-1.5 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors"
+                    title="Dismiss selection"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <CandidateForm
