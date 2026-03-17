@@ -98,6 +98,7 @@ export default function CandidateDetailClient({
   const [copiedDraftId, setCopiedDraftId] = useState<string | null>(null);
   const [whyReachOut, setWhyReachOut] = useState<string | null>(null);
   const [isGeneratingWhy, setIsGeneratingWhy] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
 
   const handleGenerateWhyReachOut = useCallback(async () => {
     if (!candidate.signals) return;
@@ -379,16 +380,32 @@ export default function CandidateDetailClient({
           </div>
         )}
 
-        {candidate.notes && (
-          <div className="mt-4">
-            <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
-              Notes
-            </h3>
-            <p className="text-sm text-zinc-300 whitespace-pre-wrap">
-              {candidate.notes}
-            </p>
-          </div>
-        )}
+        {candidate.notes && (() => {
+          const lines = candidate.notes.split("\n");
+          const isLong = lines.length > 4 || candidate.notes.length > 300;
+          const preview = isLong
+            ? lines.slice(0, 4).join("\n").slice(0, 300)
+            : candidate.notes;
+          return (
+            <div className="mt-4">
+              <h3 className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+                Notes
+              </h3>
+              <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+                {notesExpanded ? candidate.notes : preview}
+                {!notesExpanded && isLong && <span className="text-zinc-500">...</span>}
+              </p>
+              {isLong && (
+                <button
+                  onClick={() => setNotesExpanded(!notesExpanded)}
+                  className="mt-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  {notesExpanded ? "Show less" : "Show more"}
+                </button>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">

@@ -19,7 +19,7 @@ export default function CandidateForm({
   isSubmitting,
 }: {
   candidate?: Candidate;
-  onSubmit: (data: CandidateFormData) => void;
+  onSubmit: (data: CandidateFormData, meta?: { rawMeetingNotes?: string }) => void;
   onClose: () => void;
   isSubmitting: boolean;
 }) {
@@ -194,7 +194,9 @@ export default function CandidateForm({
       signals: finalForm.signals || null,
     };
     setIsProcessing(false);
-    onSubmit(data);
+    onSubmit(data, {
+      rawMeetingNotes: meetingNotes.trim() || undefined,
+    });
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {

@@ -419,6 +419,62 @@ export async function saveEmailDraft(draft: {
   return data;
 }
 
+export async function extractTouchpointsFromNotes(
+  notes: string,
+  candidateName?: string
+): Promise<
+  { date: string; channel: string; notes: string }[]
+> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an assistant for a technical recruiter. You extract touchpoint entries from meeting notes or AI notetaker transcripts.
+
+A touchpoint is any distinct interaction or meeting with the candidate — a call, video meeting, email exchange, LinkedIn message, in-person meeting, event encounter, etc.
+
+Given meeting notes, identify ALL distinct interactions/meetings mentioned. For each one, extract:
+- "date": The date in YYYY-MM-DD format. Look for dates, day references ("last Tuesday"), month references, etc. If only a month/year is mentioned, use the 1st of that month. If no date can be determined, skip that touchpoint.
+- "channel": One of "linkedin", "email", "text", "event", "other". Infer from context (video call/Zoom = "other", LinkedIn message = "linkedin", in-person = "event", phone call = "other", etc.)
+- "notes": A brief 1-2 sentence summary of what was discussed or happened in that interaction.
+
+${candidateName ? `The candidate's name is ${candidateName}.` : ""}
+
+Return JSON with a single key "touchpoints" containing an array of objects. Each object has "date", "channel", and "notes" string fields.
+If no touchpoints can be extracted, return {"touchpoints": []}.`,
+        },
+        {
+          role: "user",
+          content: notes,
+        },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) return [];
+
+    const parsed = JSON.parse(content) as {
+      touchpoints?: { date?: string; channel?: string; notes?: string }[];
+    };
+    if (!parsed.touchpoints || !Array.isArray(parsed.touchpoints)) return [];
+
+    return parsed.touchpoints
+      .filter((tp) => tp.date && tp.date.match(/^\d{4}-\d{2}-\d{2}$/))
+      .map((tp) => ({
+        date: tp.date!,
+        channel: tp.channel || "other",
+        notes: tp.notes || "",
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export async function createTouchpoint(touchpoint: {
   candidate_id: string;
   date: string;

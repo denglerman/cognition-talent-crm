@@ -9,7 +9,7 @@ import ThisWeek from "./ThisWeek";
 import NeedsAttention from "./NeedsAttention";
 import CandidateTable from "./CandidateTable";
 import CandidateForm from "./CandidateForm";
-import { createCandidate, batchUpdateCandidates } from "@/lib/actions";
+import { createCandidate, batchUpdateCandidates, extractTouchpointsFromNotes, createTouchpoint } from "@/lib/actions";
 import { addWeeks } from "@/lib/utils";
 import type { Candidate, CandidateFormData, CandidateStatus } from "@/lib/types";
 
@@ -131,11 +131,32 @@ export default function Dashboard({
     return result;
   }, [candidates, search, statusFilter, functionFilter, sortBy, sortOrder]);
 
-  const handleSubmit = async (data: CandidateFormData) => {
+  const handleSubmit = async (data: CandidateFormData, meta?: { rawMeetingNotes?: string }) => {
     setIsSubmitting(true);
     try {
       const created = await createCandidate(data);
       setShowForm(false);
+
+      // Auto-extract and create touchpoints from meeting notes
+      if (meta?.rawMeetingNotes) {
+        try {
+          const touchpoints = await extractTouchpointsFromNotes(
+            meta.rawMeetingNotes,
+            data.full_name || undefined
+          );
+          for (const tp of touchpoints) {
+            await createTouchpoint({
+              candidate_id: created.id,
+              date: tp.date,
+              channel: tp.channel,
+              notes: tp.notes || undefined,
+            });
+          }
+        } catch {
+          // Touchpoint extraction failed silently — candidate still created
+        }
+      }
+
       router.push(`/candidates/${created.id}`);
     } catch (err) {
       console.error("Failed to create candidate:", err);
