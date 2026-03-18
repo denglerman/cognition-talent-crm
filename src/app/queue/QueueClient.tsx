@@ -178,9 +178,10 @@ export default function QueueClient({
   }
 
   return (
-    <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center px-4 py-8 overflow-y-auto">
+    <div className="fixed inset-0 bg-zinc-950 overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center px-4 py-16">
       {/* Back link */}
-      <div className="absolute top-4 left-4">
+      <div className="fixed top-4 left-4 z-10">
         <Link
           href="/"
           className="flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
@@ -301,6 +302,7 @@ export default function QueueClient({
       <p className="mt-4 text-xs text-zinc-700">
         Keyboard: S = Send · Z = Snooze · X / Space / → = Skip
       </p>
+      </div>
     </div>
   );
 }
