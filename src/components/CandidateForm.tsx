@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { X, Link, Loader2, FileText, ChevronDown, ChevronUp, Upload } from "lucide-react";
-import { addWeeks } from "@/lib/utils";
+import { addDays, getNextTouchpointDays } from "@/lib/utils";
 import { parseLinkedInProfile, parseMeetingNotes } from "@/lib/actions";
 import type { Candidate, CandidateFormData, CandidateStatus, CandidateFunction, TouchChannel } from "@/lib/types";
 
@@ -83,7 +83,7 @@ export default function CandidateForm({
           linkedin_url: result.linkedin_url || f.linkedin_url,
           warm_path: result.warm_path || f.warm_path,
           trigger_notes: result.trigger_notes || f.trigger_notes,
-          status: (["cold", "warm", "ready"].includes(result.status) ? result.status : f.status) as CandidateStatus,
+          status: (["cold", "warm", "hot"].includes(result.status) ? result.status : f.status) as CandidateStatus,
           last_touch_date: result.last_touch_date || f.last_touch_date,
           last_touch_channel: (result.last_touch_channel || f.last_touch_channel) as TouchChannel | null,
           notes: meetingNotesText,
@@ -101,9 +101,10 @@ export default function CandidateForm({
   };
 
   const handleStatusChange = (status: CandidateStatus) => {
-    const updates: Partial<CandidateFormData> = { status };
-    if (status === "warm") updates.next_touchpoint_date = addWeeks(6);
-    else if (status === "cold") updates.next_touchpoint_date = addWeeks(12);
+    const updates: Partial<CandidateFormData> = {
+      status,
+      next_touchpoint_date: addDays(getNextTouchpointDays(status)),
+    };
     setForm((f) => ({ ...f, ...updates }));
   };
 
@@ -164,7 +165,7 @@ export default function CandidateForm({
           merged.linkedin_url = mn.linkedin_url || merged.linkedin_url;
           merged.warm_path = mn.warm_path || merged.warm_path;
           merged.trigger_notes = mn.trigger_notes || merged.trigger_notes;
-          if (["cold", "warm", "ready"].includes(mn.status)) {
+          if (["cold", "warm", "hot"].includes(mn.status)) {
             merged.status = mn.status as CandidateStatus;
           }
           merged.last_touch_date = mn.last_touch_date || merged.last_touch_date;
@@ -180,6 +181,9 @@ export default function CandidateForm({
       ...form,
       ...merged,
     };
+    // Auto-set next touchpoint date based on status
+    const status = finalForm.status || "cold";
+    const autoNextDate = addDays(getNextTouchpointDays(status));
     const data = {
       ...finalForm,
       full_name: finalForm.full_name || null,
@@ -192,7 +196,7 @@ export default function CandidateForm({
       warm_path: finalForm.warm_path || null,
       last_touch_date: finalForm.last_touch_date || null,
       last_touch_channel: finalForm.last_touch_channel || null,
-      next_touchpoint_date: finalForm.next_touchpoint_date || null,
+      next_touchpoint_date: autoNextDate,
       notes: finalForm.notes || null,
       ashby_url: finalForm.ashby_url || null,
       signals: finalForm.signals || null,
@@ -317,6 +321,34 @@ export default function CandidateForm({
               />
             </div>
 
+            {/* Status selector */}
+            <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">
+              <label className="mb-2 block text-xs font-medium text-zinc-400">
+                Candidate Status *
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: "hot" as CandidateStatus, label: "🟢 Hot", desc: "Action in 30 days", border: "border-green-500/50 bg-green-500/10 text-green-400" },
+                  { value: "warm" as CandidateStatus, label: "🟡 Warm", desc: "Action in 75 days", border: "border-yellow-500/50 bg-yellow-500/10 text-yellow-400" },
+                  { value: "cold" as CandidateStatus, label: "🔴 Cold", desc: "Action in 180 days", border: "border-red-500/50 bg-red-500/10 text-red-400" },
+                ]).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, status: opt.value }))}
+                    className={`rounded-lg border px-3 py-2.5 text-center transition-colors ${
+                      form.status === opt.value
+                        ? opt.border + " ring-1 ring-offset-0"
+                        : "border-zinc-700 text-zinc-400 hover:border-zinc-600"
+                    }`}
+                  >
+                    <span className="block text-sm font-medium">{opt.label}</span>
+                    <span className="block text-xs mt-0.5 opacity-70">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {addError && (
               <p className="text-sm text-red-400 px-1">{addError}</p>
             )}
@@ -326,10 +358,10 @@ export default function CandidateForm({
         {/* Full edit form — shown in Edit mode only */}
         {!isAddMode && (
           <>
-        {form.status === "ready" && (
+        {form.status === "hot" && (
           <div className="mx-6 mt-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
             <p className="text-sm font-medium text-green-400">
-              🟢 This candidate is ready — loop in Patrick
+              🟢 This candidate is hot — loop in Patrick
             </p>
           </div>
         )}
@@ -404,7 +436,7 @@ export default function CandidateForm({
               >
                 <option value="cold">🔴 Cold</option>
                 <option value="warm">🟡 Warm</option>
-                <option value="ready">🟢 Ready</option>
+                <option value="hot">🟢 Hot</option>
               </select>
             </Field>
             <Field label="Function *">

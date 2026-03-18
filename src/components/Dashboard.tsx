@@ -52,7 +52,7 @@ export default function Dashboard({
     }
 
     const statusOrder: Record<string, number> = {
-      ready: 0,
+      hot: 0,
       warm: 1,
       cold: 2,
     };

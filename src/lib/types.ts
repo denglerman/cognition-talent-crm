@@ -1,4 +1,4 @@
-export type CandidateStatus = "cold" | "warm" | "ready";
+export type CandidateStatus = "cold" | "warm" | "hot";
 export type CandidateFunction = "engineering" | "product" | "gtm" | "other";
 export type TouchChannel = "linkedin" | "email" | "text" | "event" | "other";
 

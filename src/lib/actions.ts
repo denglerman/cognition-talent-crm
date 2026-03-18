@@ -228,7 +228,7 @@ Given meeting notes, extract AS MANY of the following fields as possible and ret
 6. "linkedin_url" - Their LinkedIn URL if mentioned.
 7. "warm_path" - Who at Cognition (or the recruiter's network) has a connection to this candidate? Mutual contacts, referrals, who introduced them, shared history, etc.
 8. "trigger_notes" - What would make this candidate move/switch jobs? Frustrations, desires, career goals, what they're looking for, deal-breakers, compensation expectations, timeline, etc.
-9. "status" - The candidate's interest level. Use "cold" if not interested or very early, "warm" if somewhat interested or open to conversations, "ready" if actively looking or ready to move. Only set if clearly indicated.
+9. "status" - The candidate's interest level. Use "cold" if not interested or very early, "warm" if somewhat interested or open to conversations, "hot" if actively looking or ready to move. Only set if clearly indicated.
 10. "last_touch_date" - The date of this meeting/interaction in YYYY-MM-DD format. Look for dates mentioned in the notes.
 11. "last_touch_channel" - The channel of this interaction. Must be one of: "linkedin", "email", "text", "event", "other". Infer from context (e.g. video call = "other", LinkedIn message = "linkedin", etc.).
 

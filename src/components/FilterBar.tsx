@@ -31,7 +31,7 @@ export default function FilterBar({
         <option value="">All Statuses</option>
         <option value="cold">🔴 Cold</option>
         <option value="warm">🟡 Warm</option>
-        <option value="ready">🟢 Ready</option>
+        <option value="hot">🟢 Hot</option>
       </select>
 
       <select

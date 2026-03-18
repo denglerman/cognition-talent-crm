@@ -236,10 +236,10 @@ export default function CandidateDetailClient({
         <ArrowLeft size={16} /> Back to pipeline
       </Link>
 
-      {candidate.status === "ready" && (
+      {candidate.status === "hot" && (
         <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
           <p className="text-sm font-medium text-green-400">
-            🟢 This candidate is ready — loop in Patrick
+            🟢 This candidate is hot — loop in Patrick
           </p>
         </div>
       )}
@@ -292,7 +292,7 @@ export default function CandidateDetailClient({
               </button>
               {showStatusMenu && (
                 <div className="absolute right-0 mt-1 w-40 rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl z-10">
-                  {(["cold", "warm", "ready"] as const).map((s) => (
+                  {(["cold", "warm", "hot"] as const).map((s) => (
                     <button
                       key={s}
                       onClick={() => handleUpdateStatus(s)}

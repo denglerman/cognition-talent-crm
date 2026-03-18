@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS candidates (
   linkedin_url TEXT,
   email TEXT,
   phone TEXT,
-  status TEXT NOT NULL DEFAULT 'cold' CHECK (status IN ('cold', 'warm', 'ready')),
+  status TEXT NOT NULL DEFAULT 'cold' CHECK (status IN ('cold', 'warm', 'hot')),
   "function" TEXT NOT NULL DEFAULT 'engineering' CHECK ("function" IN ('engineering', 'product', 'gtm', 'other')),
   trigger_notes TEXT,
   warm_path TEXT,

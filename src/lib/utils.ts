@@ -33,13 +33,32 @@ export function addWeeks(weeks: number): string {
   return date.toISOString().split("T")[0];
 }
 
+export function addDays(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split("T")[0];
+}
+
+export function getNextTouchpointDays(status: string): number {
+  switch (status) {
+    case "hot":
+      return 30;
+    case "warm":
+      return 75;
+    case "cold":
+      return 180;
+    default:
+      return 75;
+  }
+}
+
 export function getStatusColor(status: CandidateStatus): string {
   switch (status) {
     case "cold":
       return "bg-red-500/20 text-red-400 border-red-500/30";
     case "warm":
       return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    case "ready":
+    case "hot":
       return "bg-green-500/20 text-green-400 border-green-500/30";
     default:
       return "bg-zinc-500/20 text-zinc-400 border-zinc-500/30";
@@ -52,7 +71,7 @@ export function getStatusEmoji(status: CandidateStatus): string {
       return "🔴";
     case "warm":
       return "🟡";
-    case "ready":
+    case "hot":
       return "🟢";
     default:
       return "⚪";

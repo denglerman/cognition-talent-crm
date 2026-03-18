@@ -10,7 +10,7 @@ import {
   createTouchpoint,
   updateCandidate,
 } from "@/lib/actions";
-import { formatDate, getChannelLabel } from "@/lib/utils";
+import { formatDate, getChannelLabel, getNextTouchpointDays, addDays as addDaysUtil } from "@/lib/utils";
 import type { Candidate } from "@/lib/types";
 
 function addDays(n: number): string {
@@ -107,9 +107,10 @@ export default function QueueClient({
 
   const handleSnooze = useCallback(async () => {
     if (!candidate) return;
+    const snoozeDays = getNextTouchpointDays(candidate.status);
     try {
       await updateCandidate(candidate.id, {
-        next_touchpoint_date: addDays(21),
+        next_touchpoint_date: addDaysUtil(snoozeDays),
       });
     } catch {
       // silent
@@ -287,7 +288,7 @@ export default function QueueClient({
           className="flex flex-col items-center gap-1 rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-zinc-300 hover:bg-zinc-700/50 hover:border-zinc-600 transition-colors"
         >
           <span className="text-sm font-medium">Snooze</span>
-          <span className="text-xs text-zinc-600">Z · +21 days</span>
+          <span className="text-xs text-zinc-600">Z · +{candidate ? getNextTouchpointDays(candidate.status) : 75}d</span>
         </button>
         <button
           onClick={handleSkip}
