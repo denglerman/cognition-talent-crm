@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Plus, Inbox } from "lucide-react";
 import SearchBar from "./SearchBar";
 import FilterBar from "./FilterBar";
 import NeedsAttention from "./NeedsAttention";
@@ -24,6 +25,13 @@ export default function Dashboard({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const queueCount = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return candidates.filter(
+      (c) => c.next_touchpoint_date && c.next_touchpoint_date <= today
+    ).length;
+  }, [candidates]);
 
   const filtered = useMemo(() => {
     let result = candidates;
@@ -113,12 +121,20 @@ export default function Dashboard({
             {candidates.length} candidates in your pipeline
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
-        >
-          <Plus size={16} /> Add Candidate
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/queue"
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+          >
+            <Inbox size={16} /> Queue{queueCount > 0 && ` (${queueCount})`}
+          </Link>
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+          >
+            <Plus size={16} /> Add Candidate
+          </button>
+        </div>
       </div>
 
       <NeedsAttention candidates={candidates} />

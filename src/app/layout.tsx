@@ -24,12 +24,6 @@ export default function RootLayout({
               <span className="text-indigo-400 font-bold">Bench Signal</span>{" "}
               <em>Cognition Talent CRM</em>
             </Link>
-            <Link
-              href="/queue"
-              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
-            >
-              Queue
-            </Link>
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
